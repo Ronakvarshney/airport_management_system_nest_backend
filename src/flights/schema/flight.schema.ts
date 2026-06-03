@@ -40,7 +40,7 @@ export class Flight {
   availableSeats!: number;
 
   @Prop({ enum: FLIGHTS_STATUS, default: FLIGHTS_STATUS.UNKNOWN, type: String })
-  status!: FLIGHTS_STATUS.UNKNOWN;
+  status!: FLIGHTS_STATUS;
 
   @Prop({ required: true })
   price!: number;

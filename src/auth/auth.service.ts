@@ -59,6 +59,10 @@ export class AuthService {
       }
 
       const hashpassword = await this.passwordHash(registerdata.password);
+      const adminRole = 'admin' as RegisterDTO['role'];
+      if (registerdata.role === adminRole) {
+        throw new ConflictException("you can't register for a role of admin");
+      }
 
       const newUser = await this.userModel.create({
         name: registerdata.name,
