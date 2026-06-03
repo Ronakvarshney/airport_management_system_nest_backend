@@ -113,6 +113,7 @@ export class AuthService {
 
   async forgotPassword(email: string) {
     try {
+      console.log('hello ronak');
       if (!email) {
         throw new ConflictException('Please provide email..');
       }
@@ -123,7 +124,7 @@ export class AuthService {
       }
 
       const forgotpasswordToken = randomBytes(32).toString('hex');
-      const resetpasswordLink = `http://localhost:3000/auth/forgot-password/${forgotpasswordToken}`;
+      const resetpasswordLink = `http://localhost:3000/auth/reset-password/${forgotpasswordToken}`;
 
       await redis.set(
         `forgot-password:${forgotpasswordToken}`,
@@ -151,7 +152,26 @@ export class AuthService {
     }
   }
 
-  async resetPassword() {}
+  async resetPassword(token: string, password: string) {
+    if (!token) {
+      throw new NotFoundException('Either resetToken or email not exists.');
+    }
+
+    const userid = await redis.get(`forgot-password:${token}`);
+    if (!userid) {
+      throw new UnauthorizedException('user not exists..');
+    }
+
+    const user = await this.userModel.findById(userid);
+    if (!user) {
+      throw new UnauthorizedException('user not exists..');
+    }
+    const hashpassword = await this.passwordHash(password);
+    user.password = hashpassword;
+    await user.save();
+
+    return { message: 'password reset successfully' };
+  }
 
   async login(logindata: LoginDTO) {
     const user = await this.userModel.findOne({ email: logindata.email });
@@ -195,5 +215,20 @@ export class AuthService {
         refreshToken,
       },
     };
+  }
+
+  async getProfile(request) {
+    const userdetails = request as {
+      email: string;
+      role: string;
+      sub: string;
+    };
+    if (!userdetails) {
+      throw new NotFoundException('In request userdetails is not found');
+    }
+
+    const user = await this.userModel.findOne({ email: userdetails.email });
+
+    return user;
   }
 }

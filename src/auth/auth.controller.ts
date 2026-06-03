@@ -6,12 +6,17 @@ import {
   HttpStatus,
   Param,
   Post,
+  Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDTO } from './dto/register.dto';
 import { LoginDTO } from './dto/login.dto';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { ForgotPassDTO } from './dto/forgot-password.dto';
+import { ResetPasswordDTO } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -46,5 +51,24 @@ export class AuthController {
       user: (await result).user,
       token: (await result).token.accessToken,
     };
+  }
+  // request -> guard -> passport -> strategy -> validate -> user set in request -> role check -> then service
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPassDTO) {
+    return this.authService.forgotPassword(dto.email);
+  }
+  @Post('/reset-password/:token')
+  async resetPassword(
+    @Param('token') token: string,
+    @Body() dto: ResetPasswordDTO,
+  ) {
+    return this.authService.resetPassword(token, dto.password);
+  }
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@Req() request: Request) {
+    return this.authService.getProfile(request.user);
   }
 }
